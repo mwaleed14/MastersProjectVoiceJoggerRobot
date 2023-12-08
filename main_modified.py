@@ -17,6 +17,7 @@ commandCreator = CommandCreator()
 # ROS
 import rospy
 from std_msgs.msg import String
+import numpy
 
 rospy.init_node('text_command_transmitter')
 pub = rospy.Publisher("/text_commands", String, queue_size=10) # queue_size gives time for subscriber to process data it gets
