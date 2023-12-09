@@ -148,6 +148,7 @@ class Manipulator:
         # class variables
         self.stopped = True
        
+        self.cmd_param = None
         self.step_size = 0.05
         self.position1 = None
         self.position2 = None
@@ -185,13 +186,42 @@ class Manipulator:
         self.waiting_for_tool_name = False
         self.current_tool = None
 
+
+
+    def robot_stop(self):
+        # Replace current trajectory with stopping trajectory
+        joint_values = self.move_group.get_current_joint_values()
+        print(joint_values)
+        stop_trajectory = JointTrajectory()
+        stop_trajectory.joint_names = ['panda_joint1',
+                                       'panda_joint2',
+                                       'panda_joint3',
+                                       'panda_joint4',
+                                       'panda_joint5',
+                                       'panda_joint6',
+                                       'panda_joint7']
+        stop_trajectory.points.append(JointTrajectoryPoint())
+        stop_trajectory.points[0].positions = joint_values
+        stop_trajectory.points[0].velocities = [0.0 for i in joint_values]
+        stop_trajectory.points[0].time_from_start = rospy.Duration(1) # Stopping time
+        stop_trajectory.header.frame_id = 'world'
+        stop_goal = FollowJointTrajectoryActionGoal()
+        stop_goal.goal.trajectory = stop_trajectory
+        self.joint_trajectory_goal_pub.publish(stop_goal)
+
+        # Stop gripper
+        goal = StopGoal()
+        self.stop_action_client.send_goal(goal)
+        self.stopped = True
+        rospy.loginfo("Stopped")
+
     def handle_received_priority_command(self, command):
-        #if type(command) == String:
-         #   cmd = command.data.split(' ')
-        #elif type(command) == list:
-        cmd = command
+        if type(command) == String:
+            cmd = command.data.split(' ')
+        elif type(command) == list:
+            cmd = command
         #________________SAFETY COMMANDS___________________________
-        if cmd == Command.STOP_ROBOT:
+        if cmd[0] == "STOP_ROBOT":
             self.robot_stop()
 
     
@@ -206,17 +236,8 @@ class Manipulator:
         print("New approach 2")
         rospy.loginfo("Started")
 
-    def handle_received_command(self, command):
-        if type(command) == String:
-            cmd = command.data.split(' ')
-        elif type(command) == list:
-            cmd = command
 
-        #________________SAFETY COMMANDS___________________________
-        if cmd[0] == "STOP":
-            self.robot_stop()
-        
-        
+
     def handle_received_command(self, command):
         if type(command) == String:
             cmd = command.data.split(' ')
@@ -357,41 +378,37 @@ class Manipulator:
             self.move_robot_to_position(cmd[1])
         
         #________________GRIPPER COMMANDS_________________________
-        elif cmd[0] == "GRIPPER" or cmd[0] == "TOOL":
-            if len(cmd) == 2:
-                if cmd[1] == "OPEN":
-                    self.open_gripper()
-                elif cmd[1] == "CLOSE":
-                    self.close_gripper()
-                elif cmd[1] == "ROTATE" or cmd[1] == "TURN" or cmd[1] == "SPIN":
-                    self.rotate_gripper(self.step_size)
-                elif cmd[1] == "HOME":
-                    self.move_gripper_home()
-                else:
-                    try:
-                        distance = float(cmd[1]) / 1000
-                        self.set_gripper_distance(distance)
-                    except ValueError:
-                        print('Sending Command to ROS: STOP')
-                        rospy.loginfo('Invalid gripper command "%s" received, available commands are:', cmd[1])
-                        rospy.loginfo('OPEN, CLOSE, ROTATE or distance between fingers in units mm between 0-80')
-                        self.shake_gripper()
-            if len(cmd) == 3:
-                if cmd[1] == "ROTATE" or cmd[1] == "TURN" or cmd[1] == "SPIN":
-                    if cmd[2] == 'BACK':
-                        self.rotate_gripper(self.step_size, False)
+        #elif cmd[0] == "GRIPPER" or cmd[0] == "TOL":
+         #   if len(cmd) == 2:
+          #      if cmd[1] == "OPEiiN":
+           #         self.open_gripper()
+            #    elif cmd[1] == "CLOyyyySE":
+             #       self.close_gripper()
+             #   elif cmd[1] == "ROr55TATE" or cmd[1] == "TURN" or cmd[1] == "SPIN":
+             #       self.rotate_gripper(self.step_size)
+             #   elif cmd[1] == "HOM55E":
+             #       self.move_gripper_home()
+     #           else:
+      #              try:
+       #                 distance = float(cmd[1]) / 1000
+        #                self.set_gripper_distance(distance)
+         #           except ValueError:
+          ##              print('Sending Command to ROS: STOP')
+            #            rospy.loginfo('Invalid gripper command "%s" received, available commands are:', cmd[1])
+             #           rospy.loginfo('OPEN, CLOSE, ROTATE or distance between fingers in units mm between 0-80')
+              #          self.shake_gripper()
+          #  if len(cmd) == 3:
+           #     if cmd[1] == "ROTATE" or cmd[1] == "TURN" or cmd[1] == "SPIN":
+            #        if cmd[2] == 'BACK':
+             #           self.rotate_gripper(self.step_size, False)
                         
-        elif cmd[0] == "OPEN":
+        elif cmd[0] == "OPEN_TOOL":
             self.open_gripper()
-        elif cmd[0] == "CLOSE" or cmd[0] == "GRASP":
+        elif cmd[0] == "CLOSE_TOOL":
             print(cmd)
             self.close_gripper()
-        elif cmd[0] == "ROTATE" or cmd[0] == "TURN" or cmd[0] == "SPIN":
-            if len(cmd) < 2:
-                self.rotate_gripper(self.step_size)
-            else:
-                if cmd[1] == 'BACK':
-                    self.rotate_gripper(self.step_size, False)
+        elif cmd[0] == "ROTATE_TOOL":
+            self.rotate_gripper()
 
 
         
@@ -409,19 +426,8 @@ class Manipulator:
 
 
         #________________CHANGE STEP SIZE________________________
-        elif cmd[0] == 'STEP' and cmd[1] == 'SIZE':
-            if cmd[2] == 'LOW':
-                self.step_size = 0.01
-                rospy.loginfo("Step size LOW (1 cm)")
-            elif cmd[2] == 'MEDIUM':
-                self.step_size = 0.05
-                rospy.loginfo("Step size MEDIUM (5 cm)")
-            elif cmd[2] == 'HIGH':
-                self.step_size = 0.1
-                rospy.loginfo("Step size HIGH (10 cm)")
-            else:
-                rospy.loginfo("Command not found.")
-                self.shake_gripper()
+        elif cmd[0] =='STEP_SIZE': 
+            self.set_stepsize_medium()
 
 
         #________________CHANGE VELOCITY________________________
@@ -468,8 +474,9 @@ class Manipulator:
             tfh.write_object(self.saved_objects)
             self.saved_objects = tfh.load_object()
             print("Tool " + cmd[2] + " saved.")
-            
-            
+
+
+
         #_______________REMOVE TOOL POSITION____________________
         elif cmd[0] == 'REMOVE' and cmd[1] == 'TOOL':
             if cmd[2] in self.saved_objects.keys():
@@ -622,6 +629,29 @@ class Manipulator:
             pose = copy.deepcopy(self.move_group.get_current_pose().pose)
             self.saved_tasks[self.recording_task_name]["moves"].append(['pose', pose])  
         
+
+    def rotate_gripper(self):
+        """Rotate gripper by a given angle (in degree)"""
+        if self.cmd_param is None:
+            return
+        self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
+        ee_pose = self.manipulator.move_group.get_current_pose()
+        ee_wxyz = [ee_pose.pose.orientation.w,
+                   ee_pose.pose.orientation.x,
+                   ee_pose.pose.orientation.y,
+                   ee_pose.pose.orientation.z]
+        new_wxyz = get_relative_orientation(ee_wxyz, self.cmd_param)
+        
+        pose = geometry_msgs.msg.Pose()
+        pose.position.x = ee_pose.pose.position.x
+        pose.position.y = ee_pose.pose.position.y
+        pose.position.z = ee_pose.pose.position.z
+        pose.orientation.w = new_wxyz[0]
+        pose.orientation.x = new_wxyz[1]
+        pose.orientation.y = new_wxyz[2]
+        pose.orientation.z = new_wxyz[3]
+        self.manipulator.moveit_execute_cartesian_path([pose])
+
     def shake_gripper(self):
         return
         if self.stopped:
@@ -757,6 +787,21 @@ class Manipulator:
             self.move_group.execute(plan[1], wait=True)
         else:
             rospy.logwarn("Could not plan trajectory from current pose to home pose")
+
+
+
+
+
+
+
+    def set_stepsize_medium(self):
+    
+        self.step_size = 0.05
+        rospy.loginfo("Step size MEDIUM (5 cm)")
+          
+
+
+
         
     def moveit_execute_cartesian_path(self, waypoints):
         """Execute cartesian path with some safety checks regarding pose waypoints"""
@@ -823,6 +868,7 @@ class CommandCreator(object):
         self.current_words = []
         self.manipulator = Manipulator()
         self.mode = CommandMode.CONTINUOUS
+
         self.start_robot = False
         # Step size in meters
         self.step_size = 0.1
@@ -833,6 +879,7 @@ class CommandCreator(object):
         # Cliport client that sends language input and expects pick-place poses from Cliport server
         # Saved positions
         self.saved_positions = {}
+        self.manipulator.cmd_param = self.cmd_param
 
         # do buffering when true
         self.buffering_ok = True
@@ -854,7 +901,7 @@ class CommandCreator(object):
             Command.STEP_SIZE: lambda: self.set_stepsize(),
             Command.OPEN_TOOL: lambda: self.oc_gripper(True),
             Command.CLOSE_TOOL: lambda: self.oc_gripper(False),
-            Command.ROTATE_TOOL: lambda: self.rotate_gripper(),
+            Command.ROTATE_TOOL: lambda: self.manipulator.rotate_gripper(),
             Command.SAVE_POSITION: lambda: self.save_position(),
             Command.LOAD_POSITION: lambda: self.load_position(),
             Command.HOME: lambda: self.manipulator.move_robot_home(),
@@ -867,6 +914,8 @@ class CommandCreator(object):
             'panda': 'PANDA',
             'robot': 'ROBOT',
             'up' : 'UP',
+            'open' : 'OPEN',
+            'close' : 'CLOSE',
             'move' : 'MOVE',
             'down' : 'DOWN',
             'again' : 'AGAIN',
@@ -959,27 +1008,7 @@ class CommandCreator(object):
         else:
             self.manipulator.close_gripper()
 
-    def rotate_gripper(self):
-        """Rotate gripper by a given angle (in degree)"""
-        if self.cmd_param is None:
-            return
-        self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
-        ee_pose = self.manipulator.move_group.get_current_pose()
-        ee_wxyz = [ee_pose.pose.orientation.w,
-                   ee_pose.pose.orientation.x,
-                   ee_pose.pose.orientation.y,
-                   ee_pose.pose.orientation.z]
-        new_wxyz = get_relative_orientation(ee_wxyz, self.cmd_param)
-        
-        pose = geometry_msgs.msg.Pose()
-        pose.position.x = ee_pose.pose.position.x
-        pose.position.y = ee_pose.pose.position.y
-        pose.position.z = ee_pose.pose.position.z
-        pose.orientation.w = new_wxyz[0]
-        pose.orientation.x = new_wxyz[1]
-        pose.orientation.y = new_wxyz[2]
-        pose.orientation.z = new_wxyz[3]
-        self.manipulator.moveit_execute_cartesian_path([pose])
+   
     
     def move(self, direction):
         """Move commands"""
@@ -1248,7 +1277,8 @@ class CommandCreator(object):
                     return ["ROTATE"] 
                 else:
                     print("Invalid " + command + " command.")
-                    return None
+                    return ["ROTATE"] 
+
 
         #___________________RECORD TASKNAME_____________________________
         elif command == "RECORD":
