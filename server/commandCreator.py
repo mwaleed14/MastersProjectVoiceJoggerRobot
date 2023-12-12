@@ -170,7 +170,6 @@ class Manipulator:
         self.home = [0, -0.785, 0, -2.356, 0, 1.571, 0.785]
 
         # class variables
-        self.stopped = True
         self.scene = scene
         self.step_size = 0.05
         self.mode = 'STEP'  # step, distance
@@ -408,8 +407,7 @@ class Manipulator:
             print(cmd)
             self.close_gripper()
         elif cmd[0] == "ROTATE_TOOL":
-            self.rotate_gripper()
-
+            self.rotate_gripper(self.step_size)
 
         
         #________________CHANGE MODE_____________________________
@@ -630,27 +628,34 @@ class Manipulator:
             self.saved_tasks[self.recording_task_name]["moves"].append(['pose', pose])  
         
 
-    def rotate_gripper(self):
-        """Rotate gripper by a given angle (in degree)"""
-        if self.cmd_param is None:
+
+
+
+    def rotate_gripper(self, stepSize, clockwise = True):
+        if self.stopped:
             return
-        self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
-        ee_pose = self.manipulator.move_group.get_current_pose()
-        ee_wxyz = [ee_pose.pose.orientation.w,
-                   ee_pose.pose.orientation.x,
-                   ee_pose.pose.orientation.y,
-                   ee_pose.pose.orientation.z]
-        new_wxyz = get_relative_orientation(ee_wxyz, self.cmd_param)
-        
-        pose = geometry_msgs.msg.Pose()
-        pose.position.x = ee_pose.pose.position.x
-        pose.position.y = ee_pose.pose.position.y
-        pose.position.z = ee_pose.pose.position.z
-        pose.orientation.w = new_wxyz[0]
-        pose.orientation.x = new_wxyz[1]
-        pose.orientation.y = new_wxyz[2]
-        pose.orientation.z = new_wxyz[3]
-        self.manipulator.moveit_execute_cartesian_path([pose])
+        # step size are: 0.01, 0.05, 0.1
+        # Increase rotating step size
+        stepSize = stepSize * 10
+        if not clockwise:
+            stepSize = stepSize * (-1)
+        joint_goal = self.move_group.get_current_joint_values()
+
+        # Joit 7 limits. max: 2.8973, min: -2.8973
+        if joint_goal[6] + stepSize >= 2.8973:
+            print("Joint 7 upper limit reached. Rotate counter-clockwise. Command: ROTATE BACK")
+            self.shake_gripper()
+        elif joint_goal[6] + stepSize <= -2.8973:
+            print("Joint 7 lower limit reached. Rotate clockwise. Command: ROTATE")
+            self.shake_gripper()
+        else:
+            joint_goal[6] = joint_goal[6] + stepSize
+            value2decimals = "{:.2f}".format(joint_goal[6])
+            rospy.loginfo("Gripper rotated. Joint 7 value: " + value2decimals + ". Max: 2.90, Min: -2.90.")
+            print(joint_goal[6])
+            self.move_group.set_max_velocity_scaling_factor(velocities[self.velocity])
+            self.move_group.go(joint_goal, wait=True)
+
 
     def shake_gripper(self):
         return
@@ -1149,7 +1154,6 @@ class CommandCreator(object):
         pose_up_2 = copy.deepcopy(pose)
         pose_up_2.position.z += z_offset_up_2
         self.manipulator.moveit_execute_cartesian_path([pose_up_2])
-
 
 
 
