@@ -157,7 +157,6 @@ class Manipulator:
         self.saved_tasks = tfh.load_task()
         # Updating waypoint is used to calculate final goal pose of AND command chain.
         self.updating_waypoint = []
-        self.saved_objects = tfh.load_object()
         self.velocity = Velocity.MEDIUM
         self.waiting_for_tool_name = False
         self.current_tool = None
@@ -176,7 +175,6 @@ class Manipulator:
         self.position1 = None
         self.position2 = None
         self.recording_task_name = None
-        self.saved_positions = tfh.load_position()
         self.saved_tasks = tfh.load_task()
         # Updating waypoint is used to calculate final goal pose of AND command chain.
         self.updating_waypoint = []
