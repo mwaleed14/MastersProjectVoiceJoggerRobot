@@ -408,6 +408,8 @@ class Manipulator:
             self.close_gripper()
         elif cmd[0] == "ROTATE_TOOL":
             self.rotate_gripper(self.step_size)
+        elif cmd[0] == "ROTATE_TOOL_BACK":
+            self.rotate_gripper(self.step_size,False)
 
         
         #________________CHANGE MODE_____________________________
@@ -821,22 +823,62 @@ class Manipulator:
         plan, _ = self.move_group.compute_cartesian_path(waypoints, 0.01, 0.0)  # jump_threshold
         self.moveit_execute_plan(plan)
     
-    def open_gripper(self) -> None:
-        """Open gripper"""
-        goal = franka_gripper.msg.MoveGoal()
-        goal.width = 0.08
-        goal.speed = 0.1
-        self.move_action_client.send_goal(goal)
+    #def open_gripper(self) -> None:
+    #    """Open gripper"""
+    #    goal = franka_gripper.msg.MoveGoal()
+    #    goal.width = 0.08
+    #    goal.speed = 0.1
+    #    self.move_action_client.send_goal(goal)
+    #    self.move_action_client.wait_for_result()
+
+    #def close_gripper(self):
+    #    """Grasp object by closing gripper"""
+    #    goal = franka_gripper.msg.GraspGoal()
+    #    goal.width = 0.00
+    #    goal.speed = 0.1
+    #    goal.force = 5  # limits 0.01 - 50 N
+    #    goal.epsilon = franka_gripper.msg.GraspEpsilon(inner=0.08, outer=0.08)
+    #    self.grasp_action_client.send_goal(goal)
+    #    self.grasp_action_client.wait_for_result()
+
+
+
+
+
+    def open_gripper(self, wait=True):
+        if self.stopped:
+            return
+        if self.recording_task_name is not None:
+            self.saved_tasks[self.recording_task_name]["moves"].append(['gripper', 'open'])
+        movegoal = MoveGoal()
+        movegoal.width = 0.08
+        movegoal.speed = 0.05
+        self.move_action_client.send_goal(movegoal)
+        if wait:
+            self.move_action_client.wait_for_result()
+
+    def set_gripper_distance(self, distance):
+        if self.stopped:
+            return
+        if self.recording_task_name is not None:
+            self.saved_tasks[self.recording_task_name]["moves"].append(['gripper', 'distance', distance])
+        movegoal = MoveGoal()
+        movegoal.width = distance
+        movegoal.speed = 0.05
+        self.move_action_client.send_goal(movegoal)
         self.move_action_client.wait_for_result()
 
     def close_gripper(self):
-        """Grasp object by closing gripper"""
-        goal = franka_gripper.msg.GraspGoal()
-        goal.width = 0.00
-        goal.speed = 0.1
-        goal.force = 5  # limits 0.01 - 50 N
-        goal.epsilon = franka_gripper.msg.GraspEpsilon(inner=0.08, outer=0.08)
-        self.grasp_action_client.send_goal(goal)
+        if self.stopped:
+            return
+        if self.recording_task_name is not None:
+            self.saved_tasks[self.recording_task_name]["moves"].append(['gripper', 'close'])
+        graspgoal = GraspGoal()
+        graspgoal.width = 0.00
+        graspgoal.speed = 0.05
+        graspgoal.force = 2  # limits 0.01 - 50 N
+        graspgoal.epsilon = GraspEpsilon(inner=0.08, outer=0.08)
+        self.grasp_action_client.send_goal(graspgoal)
         self.grasp_action_client.wait_for_result()
 
     def servo_move(self, data):
@@ -906,10 +948,14 @@ class CommandCreator(object):
             Command.STEP_SIZE: lambda: self.set_stepsize(),
             Command.OPEN_TOOL: lambda: self.oc_gripper(True),
             Command.CLOSE_TOOL: lambda: self.oc_gripper(False),
-            Command.ROTATE_TOOL: lambda: self.manipulator.rotate_gripper(),
+            Command.ROTATE_TOOL: lambda: self.manipulator.rotate_gripper(self.manipulator.step_size),
+            Command.ROTATE_TOOL_BACK: lambda: self.manipulator.rotate_gripper(self.manipulator.step_size,False),
             Command.SAVE_POSITION: lambda: self.save_position(),
             Command.LOAD_POSITION: lambda: self.load_position(),
             Command.HOME: lambda: self.manipulator.move_robot_home(),
+
+
+            
         }
 
 

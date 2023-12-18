@@ -93,9 +93,10 @@ class Command(Enum):
     OPEN_TOOL = 13
     CLOSE_TOOL = 14
     ROTATE_TOOL = 15
-    SAVE_POSITION = 16
-    LOAD_POSITION = 17
-    HOME = 18
+    ROTATE_TOOL_BACK = 16
+    SAVE_POSITION = 17
+    LOAD_POSITION = 18
+    HOME = 19
 
     def __str__(self):
         return self.name
