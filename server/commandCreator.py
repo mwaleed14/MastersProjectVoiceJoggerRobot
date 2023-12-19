@@ -445,13 +445,18 @@ class Manipulator:
 
 
         #________________SAVE ROBOT POSITION_____________________
-        elif cmd[0] == 'SAVE' and cmd[1] == 'POSITION':
-            if cmd[2] in self.saved_positions.keys():
-                rospy.loginfo("There was already a stored position with the name %s so it was overwritten", cmd[2])
-            self.saved_positions[cmd[2]] = self.move_group.get_current_pose().pose
-            tfh.write_position(self.saved_positions)
-            self.saved_positions = tfh.load_position()
-            print("Position " + cmd[2] + " saved.")
+        elif cmd[0] == "SAVE_POSITION":
+            self.save_position1(cmd)
+            print("SAVE Position executed")
+            
+            
+
+        
+        #               LOAD ROBOT POSITION_____________________
+        elif cmd[0] == "LOAD_POSITION":
+            self.load_position()
+            print("Load Position executed")
+            
             
             
         #_______________REMOVE ROBOT POSITION____________________
@@ -629,6 +634,29 @@ class Manipulator:
         
 
 
+
+
+    def save_position1(self,cmd):
+        if cmd[2] in self.saved_positions.keys():
+            rospy.loginfo("There was already a stored position with the name %s so it was overwritten", cmd[2])
+            self.saved_positions[cmd[2]] = self.move_group.get_current_pose().pose
+            tfh.write_position(self.saved_positions)
+            self.saved_positions = tfh.load_position()
+            print("Position " + cmd[2] + " saved.")
+        
+    def save_position(self):
+        """Save position of end-effector pose"""
+        if self.cmd_param is None:
+            return
+        self.saved_positions[self.cmd_param] = self.manipulator.move_group.get_current_pose().pose
+    
+    def load_position(self):
+        """Load position of end-effector pose by executing cartesian trajectory"""
+        if self.cmd_param is None or self.cmd_param not in self.saved_positions:
+            return
+        self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
+        self.manipulator.moveit_home(True)
+        self.manipulator.moveit_execute_cartesian_path([self.saved_positions[self.cmd_param]])
 
 
     def rotate_gripper(self, stepSize, clockwise = True):
@@ -948,8 +976,8 @@ class CommandCreator(object):
             Command.CLOSE_TOOL: lambda: self.oc_gripper(False),
             Command.ROTATE_TOOL: lambda: self.manipulator.rotate_gripper(self.manipulator.step_size),
             Command.ROTATE_TOOL_BACK: lambda: self.manipulator.rotate_gripper(self.manipulator.step_size,False),
-            Command.SAVE_POSITION: lambda: self.save_position(),
-            Command.LOAD_POSITION: lambda: self.load_position(),
+            Command.SAVE_POSITION: lambda: self.manipulator.save_position(),
+            Command.LOAD_POSITION: lambda: self.manipulator.load_position(),
             Command.HOME: lambda: self.manipulator.move_robot_home(),
 
 
@@ -964,6 +992,8 @@ class CommandCreator(object):
             'robot': 'ROBOT',
             'up' : 'UP',
             'open' : 'OPEN',
+            'load' : 'LOAD',
+            'save' : 'SAVE',
             'close' : 'CLOSE',
             'move' : 'MOVE',
             'down' : 'DOWN',
@@ -1089,20 +1119,7 @@ class CommandCreator(object):
             self.manipulator.move_group.stop()
             self.manipulator.move_group.clear_pose_targets()
 
-    def save_position(self):
-        """Save position of end-effector pose"""
-        if self.cmd_param is None:
-            return
-        self.saved_positions[self.cmd_param] = self.manipulator.move_group.get_current_pose().pose
-    
-    def load_position(self):
-        """Load position of end-effector pose by executing cartesian trajectory"""
-        if self.cmd_param is None or self.cmd_param not in self.saved_positions:
-            return
-        self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
-        self.manipulator.moveit_home(True)
-        self.manipulator.moveit_execute_cartesian_path([self.saved_positions[self.cmd_param]])
-
+  
     def home(self):
         """Goto home joint values"""
         self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
@@ -1403,6 +1420,17 @@ class CommandCreator(object):
             else:
                 print('Invalid ' + command + ' command. Correct form: SAVE TOOL [tool name]')
                 return None
+            
+
+        elif command == "LOAD":
+            cmd = self.all_words_lookup_table.get(words.pop(0), '')
+            if cmd in ['POSITION', 'SPOT']:
+                position_name = self.get_name(words)
+                if position_name is not None:
+                    return ['LOAD', 'POSITION', position_name]
+                else:
+                    print('Invalid ' + command + ' command. Correct form: LOAD POSITION/SPOT [position name]')
+                    return None
 
         #___________________MOVE TO POSITION___________________________
         elif command == "POSITION" or command == "SPOT":
