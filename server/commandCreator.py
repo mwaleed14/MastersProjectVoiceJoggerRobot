@@ -371,8 +371,8 @@ class Manipulator:
             print("New approach 1 MOVE")
             self.move_robot_cartesian("backward", stepSize, and_bool_parameter, is_end_bool_parameter)
             
-        elif cmd[0] == 'POSITION': # move robot to saved position
-            self.move_robot_to_position(cmd[1])
+        elif cmd[0] == "POSITION_NAME": # move robot to saved position
+            self.move_robot_to_position("man")
         
         #________________GRIPPER COMMANDS_________________________
         #elif cmd[0] == "GRIPPER" or cmd[0] == "TOL":
@@ -446,7 +446,7 @@ class Manipulator:
 
         #________________SAVE ROBOT POSITION_____________________
         elif cmd[0] == "SAVE_POSITION":
-            self.save_position1(cmd)
+            self.save_position()
             print("SAVE Position executed")
             
             
@@ -646,7 +646,7 @@ class Manipulator:
             self.saved_positions[cmd[2]] = self.move_group.get_current_pose().pose
             tfh.write_position(self.saved_positions)
             self.saved_positions = tfh.load_position()
-            print("Position " + cmd[2] + " saved.")
+            print("Position " + "man" + " saved.")
         
     def save_position(self):
         """Save position of end-effector pose"""
@@ -986,6 +986,8 @@ class CommandCreator(object):
             Command.SAVE_TOOL: lambda: self.manipulator.move_robot_home(),
             Command.REMOVE_TOOL: lambda: self.manipulator.move_robot_home(),
             Command.REMOVE_POSITION: lambda: self.manipulator.move_robot_home(),
+            Command.POSITION_NAME: lambda: self.manipulator.move_robot_to_position(),
+
 
 
 
@@ -1006,8 +1008,9 @@ class CommandCreator(object):
             'load' : 'LOAD',
             'save' : 'SAVE',
             'close' : 'CLOSE',
+            'name' : 'NAME',
             'move' : 'MOVE',
-            'down' : 'DOWN',
+            'down' : 'DOWN','close' : 'CLOSE',
             'again' : 'AGAIN',
             'left' : 'LEFT',
             'right' : 'RIGHT',
@@ -1413,7 +1416,8 @@ class CommandCreator(object):
                     return ['SAVE', 'POSITION', position_name]
                 else:
                     print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
-                    return None
+                    return ['SAVE', 'POSITION']
+                
             elif cmd == 'CORNER':
                 corner_num = self.get_number(words)
                 if corner_num in [1,2]:
@@ -1427,7 +1431,7 @@ class CommandCreator(object):
                     return ['SAVE', 'TOOL', tool_name]
                 else:
                     print('Invalid ' + command + ' command. Correct form: SAVE TOOL [tool name]')
-                    return None
+                    return ['SAVE', 'TOOL']
             else:
                 print('Invalid ' + command + ' command. Correct form: SAVE TOOL [tool name]')
                 return None
