@@ -120,7 +120,6 @@ class Server:
                 cmd = textclassifier.find_match(sentence, 0.7)
                 self.commandCreator.original_words = words
                 comd = self.commandCreator.getCommand(True)
-                print(comd)
 
                 if cmd is not None:
                     #start_robot means start sending commands
@@ -134,7 +133,6 @@ class Server:
                                     # Send robot configuration to ROS.
                                     self.pub.publish('MODE ' + self.mmode)
                                     self.pub.publish('STEP SIZE ' + self.mstep_size)
-
                     elif comd[0] == 'STOP':
                         print('Sending Command to ROS: STOP')
                         if ROS_ENABLED:
@@ -151,8 +149,6 @@ class Server:
                             if ROS_ENABLED:
                                 self.pub.publish(cmd.name)
 
-
-                    print(cmd)
                     if cmd is None:
                         rospy.logwarn(f"Couldn't classify given {sentence = } to any command")
                         continue

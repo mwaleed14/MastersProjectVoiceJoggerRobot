@@ -460,7 +460,8 @@ class Manipulator:
             
             
         #_______________REMOVE ROBOT POSITION____________________
-        elif cmd[0] == 'REMOVE' and cmd[1] == 'POSITION':
+        elif cmd[0] == "REMOVE_POSITION":
+            print("Remove position",cmd[2])
             if cmd[2] in self.saved_positions.keys():
                 tfh.deleteItem('positions.txt', cmd[2])
                 self.saved_positions = tfh.load_position()
@@ -470,7 +471,8 @@ class Manipulator:
                 self.shake_gripper()
 
         #________________SAVE TOOL POSITION_____________________
-        elif cmd[0] == 'SAVE' and cmd[1] == 'TOOL':
+        elif cmd[0] == "SAVE_TOOL":
+            print("Save tool",cmd[2])
             if cmd[2] in self.saved_objects.keys():
                 rospy.loginfo("There was already a stored tool with the name %s so it was overwritten", cmd[2])
             self.saved_objects[cmd[2]] = [self.move_group.get_current_pose().pose, 1]
@@ -481,7 +483,8 @@ class Manipulator:
 
 
         #_______________REMOVE TOOL POSITION____________________
-        elif cmd[0] == 'REMOVE' and cmd[1] == 'TOOL':
+        elif cmd[0] == "REMOVE_TOOL":
+            print("remove tool",cmd[2])
             if cmd[2] in self.saved_objects.keys():
                 tfh.deleteItem('objects.txt', cmd[2])
                 self.saved_objects = tfh.load_object()
@@ -638,6 +641,7 @@ class Manipulator:
 
     def save_position1(self,cmd):
         if cmd[2] in self.saved_positions.keys():
+            print("Save Position ",cmd[2])
             rospy.loginfo("There was already a stored position with the name %s so it was overwritten", cmd[2])
             self.saved_positions[cmd[2]] = self.move_group.get_current_pose().pose
             tfh.write_position(self.saved_positions)
@@ -979,6 +983,13 @@ class CommandCreator(object):
             Command.SAVE_POSITION: lambda: self.manipulator.save_position(),
             Command.LOAD_POSITION: lambda: self.manipulator.load_position(),
             Command.HOME: lambda: self.manipulator.move_robot_home(),
+            Command.SAVE_TOOL: lambda: self.manipulator.move_robot_home(),
+            Command.REMOVE_TOOL: lambda: self.manipulator.move_robot_home(),
+            Command.REMOVE_POSITION: lambda: self.manipulator.move_robot_home(),
+
+
+
+            
 
 
             
