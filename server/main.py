@@ -147,7 +147,12 @@ class Server:
                             cmdString = ' '.join(map(str, comd))
                             print('Sending Command to ROS: ', cmdString)
                             if ROS_ENABLED:
-                                self.pub.publish(cmd.name)
+                                print("Length of command" ,len(comd))
+                                if len(comd) > 2:
+                                    self.pub.publish(cmdString)
+                                else:
+                                    self.pub.publish(cmd.name)
+
 
                     if cmd is None:
                         rospy.logwarn(f"Couldn't classify given {sentence = } to any command")

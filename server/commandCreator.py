@@ -371,8 +371,8 @@ class Manipulator:
             print("New approach 1 MOVE")
             self.move_robot_cartesian("backward", stepSize, and_bool_parameter, is_end_bool_parameter)
             
-        elif cmd[0] == "POSITION_NAME": # move robot to saved position
-            self.move_robot_to_position("man")
+        elif cmd[0] == "POSITION_NAME" : # move robot to saved position
+            self.move_robot_to_position(cmd[1])
         
         #________________GRIPPER COMMANDS_________________________
         #elif cmd[0] == "GRIPPER" or cmd[0] == "TOL":
@@ -446,7 +446,9 @@ class Manipulator:
 
         #________________SAVE ROBOT POSITION_____________________
         elif cmd[0] == "SAVE_POSITION":
-            self.save_position()
+            self.save_position1(cmd)
+            print("save position",cmd[2])
+
             print("SAVE Position executed")
             
             
@@ -454,7 +456,9 @@ class Manipulator:
         
         #               LOAD ROBOT POSITION_____________________
         elif cmd[0] == "LOAD_POSITION":
-            self.load_position()
+            print("load position length", len(cmd))
+            print("load tool",cmd[2])
+            self.move_robot_to_position(cmd[1])
             print("Load Position executed")
             
             
@@ -640,6 +644,8 @@ class Manipulator:
 
 
     def save_position1(self,cmd):
+        leng = len(cmd)
+        print("Length of command" ,leng)
         if cmd[2] in self.saved_positions.keys():
             print("Save Position ",cmd[2])
             rospy.loginfo("There was already a stored position with the name %s so it was overwritten", cmd[2])
@@ -1416,7 +1422,7 @@ class CommandCreator(object):
                     return ['SAVE', 'POSITION', position_name]
                 else:
                     print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
-                    return ['SAVE', 'POSITION']
+                    return ['SAVE', 'POSITION', position_name]
                 
             elif cmd == 'CORNER':
                 corner_num = self.get_number(words)
@@ -1431,7 +1437,7 @@ class CommandCreator(object):
                     return ['SAVE', 'TOOL', tool_name]
                 else:
                     print('Invalid ' + command + ' command. Correct form: SAVE TOOL [tool name]')
-                    return ['SAVE', 'TOOL']
+                    return ['SAVE', 'TOOL', tool_name]
             else:
                 print('Invalid ' + command + ' command. Correct form: SAVE TOOL [tool name]')
                 return None
