@@ -373,6 +373,14 @@ class Manipulator:
             
         elif cmd[0] == "POSITION_NAME" : # move robot to saved position
             self.move_robot_to_position(cmd[1])
+
+        elif cmd[0] == "MOVE" and cmd[1] == 'POSITION':
+            stepSize = self.step_size
+            if self.mode == 'STEP':
+                stepSize = self.step_size
+                print("Position " + cmd[2] + " saved.")
+                self.move_robot_to_position(cmd[2])
+
         
         #________________GRIPPER COMMANDS_________________________
         #elif cmd[0] == "GRIPPER" or cmd[0] == "TOL":
@@ -445,11 +453,20 @@ class Manipulator:
 
 
         #________________SAVE ROBOT POSITION_____________________
-        elif cmd[0] == "SAVE_POSITION":
-            self.save_position1(cmd)
-            print("save position",cmd[2])
+        #elif cmd[0] == "SAVE_POSITION":
+         #   self.save_position1(cmd)
+         #  print("save position",cmd[2])
+         # print("SAVE Position executed")
+                
+            
 
-            print("SAVE Position executed")
+        elif cmd[0] == 'SAVE' and cmd[1] == 'POSITION':
+            if cmd[2] in self.saved_positions.keys():
+                rospy.loginfo("There was already a stored position with the name %s so it was overwritten", cmd[2])
+            self.saved_positions[cmd[2]] = self.move_group.get_current_pose().pose
+            tfh.write_position(self.saved_positions)
+            self.saved_positions = tfh.load_position()
+            print("Position " + cmd[2] + " saved.")
             
             
 
@@ -458,13 +475,13 @@ class Manipulator:
         elif cmd[0] == "LOAD_POSITION":
             print("load position length", len(cmd))
             print("load tool",cmd[2])
-            self.move_robot_to_position(cmd[1])
+            self.move_robot_to_position(cmd[2])
             print("Load Position executed")
             
             
             
         #_______________REMOVE ROBOT POSITION____________________
-        elif cmd[0] == "REMOVE_POSITION":
+        elif cmd[0] == 'REMOVE' and cmd[1] == 'POSITION':
             print("Remove position",cmd[2])
             if cmd[2] in self.saved_positions.keys():
                 tfh.deleteItem('positions.txt', cmd[2])
@@ -991,15 +1008,8 @@ class CommandCreator(object):
             Command.HOME: lambda: self.manipulator.move_robot_home(),
             Command.SAVE_TOOL: lambda: self.manipulator.move_robot_home(),
             Command.REMOVE_TOOL: lambda: self.manipulator.move_robot_home(),
-            Command.REMOVE_POSITION: lambda: self.manipulator.move_robot_home(),
-            Command.POSITION_NAME: lambda: self.manipulator.move_robot_to_position(),
-
-
-
-
-            
-
-
+            Command.REMOVE_POSITION: lambda: self.manipulator.save_position1(),
+            Command.MOVE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             
         }
 

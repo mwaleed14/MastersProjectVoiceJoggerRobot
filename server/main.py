@@ -121,7 +121,7 @@ class Server:
                 self.commandCreator.original_words = words
                 comd = self.commandCreator.getCommand(True)
 
-                if cmd is not None:
+                if comd is not None:
                     #start_robot means start sending commands
                     if cmd.name == "START_ROBOT":
                             print("Converted from ENUM to STRING ",cmd.name) 
@@ -141,7 +141,7 @@ class Server:
                         print('Stopping with command: ', comd)
 
                     # cmds are published after the robot is started
-                    if self.start_robot and cmd is not None:                
+                    if self.start_robot and comd is not None:                
                         if comd[0] !='AGAIN':
                             self.prev_cmd = comd
                             cmdString = ' '.join(map(str, comd))

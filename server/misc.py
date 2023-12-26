@@ -97,11 +97,11 @@ class Command(Enum):
     SAVE_POSITION = 17
     LOAD_POSITION = 18
     HOME = 19
-    SAVE_TOOL = 20,
-    REMOVE_TOOL = 21,
-    REMOVE_POSITION = 22,
-    POSITION_NAME = 23,
-
+    SAVE_TOOL = 20
+    REMOVE_TOOL = 21
+    REMOVE_POSITION = 22
+    MOVE_POSITION = 23
+ 
     def __str__(self):
         return self.name
     
