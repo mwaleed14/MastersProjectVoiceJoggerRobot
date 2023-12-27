@@ -370,17 +370,8 @@ class Manipulator:
 
             print("New approach 1 MOVE")
             self.move_robot_cartesian("backward", stepSize, and_bool_parameter, is_end_bool_parameter)
-            
-        elif cmd[0] == "POSITION_NAME" : # move robot to saved position
-            self.move_robot_to_position(cmd[1])
 
-        elif cmd[0] == "MOVE" and cmd[1] == 'POSITION':
-            stepSize = self.step_size
-            if self.mode == 'STEP':
-                stepSize = self.step_size
-                print("Position " + cmd[2] + " saved.")
-                self.move_robot_to_position(cmd[2])
-
+        
         
         #________________GRIPPER COMMANDS_________________________
         #elif cmd[0] == "GRIPPER" or cmd[0] == "TOL":
@@ -458,7 +449,16 @@ class Manipulator:
          #  print("save position",cmd[2])
          # print("SAVE Position executed")
                 
-            
+        
+
+        elif cmd[0] == 'POSITION' and cmd[1] == 'NAME':
+            stepSize = self.step_size
+            if cmd[2] in self.saved_positions.keys():
+                if self.mode == 'STEP':
+                    stepSize = self.step_size
+                    print("Position1 " + cmd[2] + " saved.")
+                    self.move_robot_to_position(cmd[2])
+
 
         elif cmd[0] == 'SAVE' and cmd[1] == 'POSITION':
             if cmd[2] in self.saved_positions.keys():
@@ -1008,8 +1008,8 @@ class CommandCreator(object):
             Command.HOME: lambda: self.manipulator.move_robot_home(),
             Command.SAVE_TOOL: lambda: self.manipulator.move_robot_home(),
             Command.REMOVE_TOOL: lambda: self.manipulator.move_robot_home(),
-            Command.REMOVE_POSITION: lambda: self.manipulator.save_position1(),
-            Command.MOVE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+            Command.REMOVE_POSITION: lambda: self.manipulator.move_robot_home(),
+            Command.POSITION_NAME: lambda: self.manipulator.move_robot_to_position("mn"),
             
         }
 
@@ -1464,9 +1464,19 @@ class CommandCreator(object):
                     return None
 
         #___________________MOVE TO POSITION___________________________
-        elif command == "POSITION" or command == "SPOT":
-            position_name = self.get_name(words)
-            return ["POSITION", position_name]
+       # elif command == "POSITION" or command == "SPOT":
+        #    position_name = self.get_name(words)
+         #   return ["POSITION", position_name]
+        
+        elif command == "POSITION":
+            cmd = self.all_words_lookup_table.get(words.pop(0), '')
+            if cmd in ['NAME', 'SPOT']:
+                position_name = self.get_name(words)
+                if position_name is not None:
+                    return ['POSITION', 'NAME', position_name]
+                else:
+                    print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
+                    return ['POSITION', 'NAME', position_name]
 
         #___________________TAKE TOOL________________________
         elif command == "TAKE":

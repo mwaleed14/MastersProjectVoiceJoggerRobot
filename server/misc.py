@@ -100,7 +100,7 @@ class Command(Enum):
     SAVE_TOOL = 20
     REMOVE_TOOL = 21
     REMOVE_POSITION = 22
-    MOVE_POSITION = 23
+    POSITION_NAME = 23
  
     def __str__(self):
         return self.name
