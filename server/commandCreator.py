@@ -482,7 +482,7 @@ class Manipulator:
             
         #_______________REMOVE ROBOT POSITION____________________
         elif cmd[0] == 'REMOVE' and cmd[1] == 'POSITION':
-            print("Remove position",cmd[2])
+            print("Remove position ",cmd[2])
             if cmd[2] in self.saved_positions.keys():
                 tfh.deleteItem('positions.txt', cmd[2])
                 self.saved_positions = tfh.load_position()
@@ -492,20 +492,17 @@ class Manipulator:
                 self.shake_gripper()
 
         #________________SAVE TOOL POSITION_____________________
-        elif cmd[0] == "SAVE_TOOL":
-            print("Save tool",cmd[2])
+        elif cmd[0] == 'SAVE' and cmd[1] == 'TOOL':
             if cmd[2] in self.saved_objects.keys():
                 rospy.loginfo("There was already a stored tool with the name %s so it was overwritten", cmd[2])
             self.saved_objects[cmd[2]] = [self.move_group.get_current_pose().pose, 1]
             tfh.write_object(self.saved_objects)
             self.saved_objects = tfh.load_object()
             print("Tool " + cmd[2] + " saved.")
-
-
-
+            
+            
         #_______________REMOVE TOOL POSITION____________________
-        elif cmd[0] == "REMOVE_TOOL":
-            print("remove tool",cmd[2])
+        elif cmd[0] == 'REMOVE' and cmd[1] == 'TOOL':
             if cmd[2] in self.saved_objects.keys():
                 tfh.deleteItem('objects.txt', cmd[2])
                 self.saved_objects = tfh.load_object()
@@ -1387,10 +1384,18 @@ class CommandCreator(object):
         #___________________REMOVE/DELETE TASK/POSITION______________________
         elif command == "REMOVE" or command == 'DELETE':
             # Remove position
-            if self.all_words_lookup_table.get(words[0], '') in ['POSITION', 'SPOT']:
+            cmd = self.all_words_lookup_table.get(words.pop(0), '')
+            if cmd in ['POSITION', 'SPOT']:
                 words.pop(0)
                 position_name = self.get_name(words)
                 return ["REMOVE", "POSITION", position_name]
+            elif cmd == 'TOOL':
+                tool_name = self.get_name(words)
+                if tool_name is not None:
+                    return ['REMOVE', 'TOOL', tool_name]
+                else:
+                    print('Invalid ' + command + ' command. Correct form: SAVE TOOL [tool name]')
+                    return ['REMOVE', 'TOOL', tool_name]
             else:
                 task_name = self.get_name(words)
                 if task_name is not None:
@@ -1464,9 +1469,6 @@ class CommandCreator(object):
                     return None
 
         #___________________MOVE TO POSITION___________________________
-       # elif command == "POSITION" or command == "SPOT":
-        #    position_name = self.get_name(words)
-         #   return ["POSITION", position_name]
         
         elif command == "POSITION":
             cmd = self.all_words_lookup_table.get(words.pop(0), '')

@@ -87,7 +87,10 @@ def deleteItem(filename, name):
 		data = load_position()
 		data.pop(name)
 		write_position(data)
-		
+	elif filename == "objects.txt":
+		data = load_object()
+		data.pop(name)
+		write_object(data)
 	else:
 		data = load_task()
 		data.pop(name)
