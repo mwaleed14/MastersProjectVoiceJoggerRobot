@@ -235,6 +235,141 @@ class Manipulator:
 
 
 
+
+    def give_tool(self, name):
+        if "CORNER1" not in self.saved_positions.keys() or "CORNER2" not in self.saved_positions.keys():
+            rospy.loginfo("Corners not saved")
+            self.shake_gripper()
+            return
+
+        # If there isn't saved position, dont't do nothing but inform user
+        if name not in self.saved_objects.keys():
+            rospy.loginfo("Object " + name + " not saved.")
+            self.shake_gripper()
+            return
+
+        if not self.saved_objects[name][1]:
+            rospy.loginfo("Object " + name + " not in place.")
+            self.shake_gripper()
+            return
+
+        target = copy.deepcopy(self.saved_objects[name][0])
+        approach_target = copy.deepcopy(target)
+        approach_target.position.z += self.pickup_approach_height
+        # Pick up tool
+        self.open_gripper(wait=False) # Start opening gripper while moving
+        self.move_robot([approach_target])
+        self.open_gripper(wait=True) # Verify gripper is open before moving to target
+        self.move_robot([target])
+        self.close_gripper()
+        # Drop tool
+        target2 = copy.deepcopy(self.saved_positions["CORNER2"])
+        target2.position.x -= self.pickup_area_offset
+        target2.position.y -= self.pickup_area_offset
+        approach_target2 = copy.deepcopy(target2)
+        approach_target2.position.z += self.pickup_approach_height
+        target2.position.z = self.saved_objects[name][0].position.z
+        waypoints = []
+        waypoints.append(approach_target)
+        waypoints.append(approach_target2)
+        waypoints.append(target2)
+        self.move_robot(waypoints)
+        self.open_gripper()
+        # Move up
+        self.move_robot([approach_target2])
+
+        self.change_object_status(name, 0)
+
+    def drop_tool(self, name):
+        if "DROP" not in self.saved_positions.keys():
+            rospy.loginfo("Drop position not saved")
+            self.shake_gripper()
+            return
+
+        # If there isn't saved position, dont't do nothing but inform user
+        if name not in self.saved_objects.keys():
+            rospy.loginfo("Object " + name + " not saved.")
+            self.shake_gripper()
+            return
+
+        if not self.saved_objects[name][1]:
+            rospy.loginfo("Object " + name + " not in place.")
+            self.shake_gripper()
+            return
+
+        target = copy.deepcopy(self.saved_objects[name][0])
+        approach_target = copy.deepcopy(target)
+        approach_target.position.z += self.pickup_approach_height
+        # Pick up tool
+        self.open_gripper(wait=False) # Start opening gripper while moving
+        self.move_robot([approach_target])
+        self.open_gripper(wait=True) # Verify gripper is open before moving to target
+        self.move_robot([target])
+        self.close_gripper()
+        # Drop tool
+        drop_target = copy.deepcopy(self.saved_positions["DROP"])
+        waypoints = []
+        waypoints.append(approach_target)
+        waypoints.append(drop_target)
+        self.move_robot(waypoints)
+        self.open_gripper()
+
+        self.change_object_status(name, 0)
+
+    def drop_all(self):
+        for tool in self.saved_objects.keys():
+            if (self.saved_objects[tool][1]):
+                self.drop_tool(tool)
+
+    def pickup_tool(self, name=""):
+        if "CORNER1" not in self.saved_positions.keys() or "CORNER2" not in self.saved_positions.keys():
+            rospy.loginfo("Corners not saved")
+            self.shake_gripper()
+            return
+
+        if name != "" and self.saved_objects[name][1]:
+            rospy.loginfo("Object " + name + " is already in place.")
+            self.shake_gripper()
+            return
+
+        target = copy.deepcopy(self.saved_positions["CORNER2"])
+        target.position.x -= self.pickup_area_offset
+        target.position.y -= self.pickup_area_offset
+        approach_target = copy.deepcopy(target)
+        approach_target.position.z += self.pickup_approach_height
+
+        if name == "":
+            target.position.z += self.default_pickup_height
+        else:
+            target.position.z = self.saved_objects[name][0].position.z
+
+        # Go to pickup point
+        self.open_gripper(wait=False) # Start opening gripper while moving
+        self.move_robot([approach_target])
+        self.open_gripper(wait=True) # Verify gripper is open before moving to target
+        self.move_robot([target])
+        # Pick tool
+        self.close_gripper()
+        # Move up
+        waypoints = []
+        waypoints.append(approach_target)
+        if name == "":
+            self.move_robot(waypoints)
+            self.waiting_for_tool_name = True
+        else:
+            target2 = copy.deepcopy(self.saved_objects[name][0])
+            approach_target2 = copy.deepcopy(target2)
+            approach_target2.position.z = approach_target.position.z
+            waypoints.append(approach_target2)
+            waypoints.append(target2)
+            self.move_robot(waypoints)
+            self.open_gripper()
+            self.move_robot([approach_target2])
+
+            self.change_object_status(name, 1)
+
+        self.current_tool = None
+
     def handle_received_command(self, command):
         if type(command) == String:
             cmd = command.data.split(' ')
@@ -1007,6 +1142,8 @@ class CommandCreator(object):
             Command.REMOVE_TOOL: lambda: self.manipulator.move_robot_home(),
             Command.REMOVE_POSITION: lambda: self.manipulator.move_robot_home(),
             Command.POSITION_NAME: lambda: self.manipulator.move_robot_to_position("mn"),
+            Command.TAKE_NEW: lambda: self.manipulator.move_robot_to_position("mn"),
+
             
         }
 
