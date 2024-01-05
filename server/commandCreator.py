@@ -911,6 +911,125 @@ class Manipulator:
             self.move_group.go(joint_goal, wait=True)
 
 
+
+
+    ### Added by Peter ###
+    def pick_object(self, position):
+        if position in self.saved_positions.keys():
+            target = copy.deepcopy(self.saved_positions[position])
+            target_approach = copy.deepcopy(target)
+            target_approach.position.z += self.pick_approach_height
+            self.open_gripper(wait=False)
+            self.move_robot_to_waypoints([target_approach])
+            self.open_gripper(wait=True)
+            self.move_robot_to_waypoints([target])
+            self.close_gripper(wait=True)
+            self.move_robot_to_waypoints([target_approach])
+
+            rospy.loginfo("Robot picked object at position " + position)
+        else:
+            rospy.loginfo("Position " + position + " not saved.")
+
+    ### Added by Peter ###
+    def place_object(self, position):
+        if position in self.saved_positions.keys():
+            target = copy.deepcopy(self.saved_positions[position])
+            target_approach = copy.deepcopy(target)
+            target_approach.position.z += self.pick_approach_height
+            self.move_robot_to_waypoints([target_approach])
+            self.move_robot_to_waypoints([target])
+            self.open_gripper(wait=True)
+            self.move_robot_to_waypoints([target_approach])
+
+            rospy.loginfo("Robot placed object at position " + position)
+        else:
+            rospy.loginfo("Position " + position + " not saved.")
+
+    ### Added by Peter ###
+    def offset_object(self, position, direction, distance):
+        if position in self.saved_positions.keys():
+            target = copy.deepcopy(self.saved_positions[position])
+            if direction == "forward":
+                target.position.x += distance
+            elif direction == "backward":
+                target.position.x -= distance
+            elif direction == "left":
+                target.position.y -= distance
+            elif direction == "right":
+                target.position.y += distance
+            else:
+                rospy.loginfo("Direction can be either left, right, forward or backward.")
+                return
+            target_approach = copy.deepcopy(target)
+            target_approach.position.z += self.pick_approach_height
+            self.move_robot_to_waypoints([target_approach])
+            self.move_robot_to_waypoints([target])
+            self.open_gripper(wait=True)
+            self.move_robot_to_waypoints([target_approach])
+
+            rospy.loginfo("Robot placed object at position " + position + " offset " + direction + " with " + str(distance) + " m")
+        else:
+            rospy.loginfo("Position " + position + " not saved.")
+
+    ### Added by Peter ###
+    def push_object(self, position, direction, distance):
+        if position in self.saved_positions.keys():
+            target = copy.deepcopy(self.saved_positions[position])
+            target_approach = copy.deepcopy(target)
+            if direction == "forward":
+                target_approach.position.x += distance
+            elif direction == "backward":
+                target_approach.position.x -= distance
+            elif direction == "left":
+                target_approach.position.y -= distance
+            elif direction == "right":
+                target_approach.position.y += distance
+            else:
+                rospy.loginfo("Direction can be either left, right, forward or backward.")
+                return
+            target_push = copy.deepcopy(target_approach)
+            target_approach.position.z += self.pick_approach_height
+            
+            self.move_robot_to_waypoints([target_approach])
+            self.move_robot_to_waypoints([target_push])
+            self.move_robot_to_waypoints([target])
+            self.move_robot_to_waypoints([target_push])
+            self.move_robot_to_waypoints([target_approach])
+
+            rospy.loginfo("Robot pushed object at position " + position + " from " + direction + " with " + str(distance) + " m")
+        else:
+            rospy.loginfo("Position " + position + " not saved.")
+
+    ### Added by Peter ###
+    def stack_object(self, position, distance):
+        if position in self.saved_positions.keys():
+            target = copy.deepcopy(self.saved_positions[position])
+            target.position.z += distance
+            target_approach = copy.deepcopy(target)
+            target_approach.position.z += self.pick_approach_height
+            self.move_robot_to_waypoints([target_approach])
+            self.move_robot_to_waypoints([target])
+            self.open_gripper(wait=True)
+            self.move_robot_to_waypoints([target_approach])
+
+            rospy.loginfo("Robot stacked object at position " + position + " at a height of " + str(distance) + " m")
+        else:
+            rospy.loginfo("Position " + position + " not saved.")
+
+    ### Added by Peter ###
+    def hold_object(self, position, distance):
+        if position in self.saved_positions.keys():
+            target = copy.deepcopy(self.saved_positions[position])
+            target.position.z += distance
+            target_approach = copy.deepcopy(target)
+            target_approach.position.z += self.pick_approach_height
+            self.move_robot_to_waypoints([target_approach])
+            self.move_robot_to_waypoints([target])
+            
+            rospy.loginfo("Robot is holding object at position " + position + " at a height of " + str(distance) + " m")
+        else:
+            rospy.loginfo("Position " + position + " not saved.")
+
     def shake_gripper(self):
         return
         if self.stopped:
@@ -927,6 +1046,7 @@ class Manipulator:
         joint_goal[6] = joint_goal[6] - step_size
         self.move_group.go(joint_goal, wait=True)
         self.move_group.set_max_velocity_scaling_factor(velocities[self.velocity])
+        
     def move_gripper_home(self):
         pose = geometry_msgs.msg.Pose()
         pose.position.x = 0.30701957
