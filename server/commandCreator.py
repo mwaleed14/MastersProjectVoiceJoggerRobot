@@ -604,7 +604,74 @@ class Manipulator:
             print("Position " + cmd[2] + " saved.")
             
             
+        ### Added by Peter ###			
+        #_________________PICK AND PLACE related commands_________________________
+        elif cmd[0] == 'PICK':
+            if len(cmd) > 1:
+                if cmd[1] == 'POSITION':
+                    self.pick_object(cmd[2])
+                self.pick_object(cmd[1])
+            else:
+                rospy.loginfo("Not enough arguments, expected PICK [position name]")
 
+        elif cmd[0] == 'PLACE':
+            if len(cmd) > 1:
+                if cmd[1] == 'POSITION':
+                    self.place_object(cmd[2])
+                self.place_object(cmd[1])
+            else:
+                rospy.loginfo("Not enough arguments, expected PLACE [position name]")
+        
+        elif cmd[0] == 'OFFSET':
+            if len(cmd) > 3:
+                if cmd[2] == "LEFT":
+                    direction = "left"
+                elif cmd[2] == "RIGHT":
+                    direction = "right"
+                elif cmd[2] == "FORWARD":
+                    direction = "forward"
+                elif cmd[2] == "BACKWARD":
+                    direction = "backward"
+                height = get_number(cmd[3:]) / 1000
+                self.offset_object(cmd[1], direction, height)
+            else:
+                rospy.loginfo("Not enough arguments, expected OFFSET [position name] [direction] [distance]")
+
+        elif cmd[0] == 'PUSH':
+            if len(cmd) > 3:
+                if cmd[2] == "LEFT":
+                    direction = "left"
+                elif cmd[2] == "RIGHT":
+                    direction = "right"
+                elif cmd[2] == "FORWARD":
+                    direction = "forward"
+                elif cmd[2] == "BACKWARD":
+                    direction = "backward"
+                height = get_number(cmd[3:]) / 1000
+                self.push_object(cmd[1], direction, height)
+            else:
+                rospy.loginfo("Not enough arguments, expected PUSH [position name] [direction] [distance]")
+
+        elif cmd[0] == 'STACK':
+            if len(cmd) > 2:
+                if cmd[1] == 'POSITION':
+                    height = get_number(cmd[3:]) / 1000
+                    self.stack_object(cmd[2], distance=height)
+                height = get_number(cmd[2:]) / 1000
+                self.stack_object(cmd[1], distance=height)
+            else:
+                rospy.loginfo("Not enough arguments, expected STACK [position name] DISTANCE [distance]")
+
+        elif cmd[0] == 'HOLD':
+            if len(cmd) > 2:
+                if cmd[1] == 'POSITION':
+                    height = get_number(cmd[3:]) / 1000
+                    self.hold_object(cmd[2], distance=height)
+                height = get_number(cmd[2:]) / 1000
+                self.hold_object(cmd[1], distance=height)
+            else:
+                rospy.loginfo("Not enough arguments, expected HOLD [position name] DISTANCE [distance]")
+            
         
         #               LOAD ROBOT POSITION_____________________
         elif cmd[0] == "LOAD_POSITION":
@@ -1616,6 +1683,136 @@ class CommandCreator(object):
                 else:
                     print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
                     return ['POSITION', 'NAME', position_name]
+
+
+ ### Added by Peter ###
+        #___________________PICK, PLACE, STACK_________________________
+        elif command == "PICK":
+            position_name = self.get_name(words)
+            return ["PICK", position_name]
+        
+        ### Added by Peter ###
+        elif command == "PLACE":
+            position_name = self.get_name(words)
+            return ["PLACE", position_name]
+        
+        ### Added by Peter ###
+        elif command == "OFFSET":
+            if len(words) < 3:
+                return None
+            index = 0
+            direction_command_found = False
+            name_words = []
+            distance_words = []
+            for word in words:
+                direction_command = self.all_words_lookup_table.get(word, '')
+                if direction_command not in ['LEFT', 'RIGHT', 'FORWARD', 'BACKWARD']:
+                    index += 1
+                    continue
+                else:
+                    direction_command_found = True
+                    name_words = words[0:index]
+                    distance_words = words[(index+1):]
+                    break
+            if not direction_command_found:
+                print('Invalid ' + command + ' command. Correct form: OFFSET [position] [direction] [distance]')
+                return None
+            else:
+                position_name = self.get_name(name_words)
+                distance = self.get_number(distance_words)
+                if distance == None:
+                    print('Invalid ' + command + ' command. No proper distance value found. Correct form: OFFSET [position] [direction] [distance]')
+                    return None
+                return ['OFFSET', position_name, direction_command, distance]
+
+        ### Added by Peter ###    
+        elif command == "PUSH":
+            if len(words) < 3:
+                return None
+            index = 0
+            direction_command_found = False
+            name_words = []
+            distance_words = []
+            for word in words:
+                direction_command = self.all_words_lookup_table.get(word, '')
+                if direction_command not in ['LEFT', 'RIGHT', 'FORWARD', 'BACKWARD']:
+                    index += 1
+                    continue
+                else:
+                    direction_command_found = True
+                    name_words = words[0:index]
+                    distance_words = words[(index+1):]
+                    break
+            if not direction_command_found:
+                print('Invalid ' + command + ' command. Correct form: PUSH [position] [direction] [distance]')
+                return None
+            else:
+                position_name = self.get_name(name_words)
+                distance = self.get_number(distance_words)
+                if distance == None:
+                    print('Invalid ' + command + ' command. No proper distance value found. Correct form: PUSH [position] [direction] [distance]')
+                    return None
+                return ['PUSH', position_name, direction_command, distance]
+        
+        ### Added by Peter ###
+        elif command == "STACK":
+            if len(words) < 3:
+                return None
+            index = 0
+            distance_command_found = False
+            name_words = []
+            distance_words = []
+            for word in words:
+                distance_command = self.all_words_lookup_table.get(word, '')
+                if distance_command not in ['DISTANCE']:
+                    index += 1
+                    continue
+                else:
+                    distance_command_found = True
+                    name_words = words[0:index]
+                    distance_words = words[(index+1):]
+                    break
+            if not distance_command_found:
+                print('Invalid ' + command + ' command. Correct form: STACK [position name] DISTANCE [distance]')
+                return None
+            else:
+                position_name = self.get_name(name_words)
+                distance = self.get_number(distance_words)
+                if distance == None:
+                    print('Invalid ' + command + ' command. No proper distance value found. Correct form: STACK [position name] DISTANCE [distance]')
+                    return None
+                return ['STACK', position_name, distance]
+
+        ### Added by Peter ###    
+        elif command == "HOLD":
+            if len(words) < 3:
+                return None
+            index = 0
+            distance_command_found = False
+            name_words = []
+            distance_words = []
+            for word in words:
+                distance_command = self.all_words_lookup_table.get(word, '')
+                if distance_command not in ['DISTANCE']:
+                    index += 1
+                    continue
+                else:
+                    distance_command_found = True
+                    name_words = words[0:index]
+                    distance_words = words[(index+1):]
+                    break
+            if not distance_command_found:
+                print('Invalid ' + command + ' command. Correct form: HOLD [position name] DISTANCE [distance]')
+                return None
+            else:
+                position_name = self.get_name(name_words)
+                distance = self.get_number(distance_words)
+                if distance == None:
+                    print('Invalid ' + command + ' command. No proper distance value found. Correct form: HOLD [position name] DISTANCE [distance]')
+                    return None
+                return ['HOLD', position_name, distance]
+
+
 
         #___________________TAKE TOOL________________________
         elif command == "TAKE":
