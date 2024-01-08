@@ -101,7 +101,8 @@ class Command(Enum):
     REMOVE_TOOL = 21
     REMOVE_POSITION = 22
     POSITION_NAME = 23
-    TAKE_NEW = 24
+    TAKE_NEW = 24 
+    PICK_POSITION = 25 
  
     def __str__(self):
         return self.name

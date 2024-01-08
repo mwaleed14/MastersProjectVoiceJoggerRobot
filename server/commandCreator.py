@@ -1330,6 +1330,9 @@ class CommandCreator(object):
             Command.REMOVE_POSITION: lambda: self.manipulator.move_robot_home(),
             Command.POSITION_NAME: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.TAKE_NEW: lambda: self.manipulator.move_robot_to_position("mn"),
+            Command.PICK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+
+
 
             
         }
@@ -1387,12 +1390,28 @@ class CommandCreator(object):
             'velocity' : 'VELOCITY',
             'speed' : 'VELOCITY',
             'recover' : 'RECOVER',
-            'take' : 'TAKE',
             'give' : 'GIVE',
             'name' : 'NAME',
+            'pick' : 'PICK',
             'return' : 'RETURN',
             'drop' : 'DROP',
             'and' : 'AND',
+            'place' : 'PLACE',
+            'police' : 'PLACE',
+            'offset' : 'OFFSET',
+            'push' : 'PUSH',
+            'bush' : 'PUSH',
+            'stack' : 'STACK',
+             'take' : 'TAKE',
+            'hold' : 'HOLD',
+            'whole' : 'HOLD',
+            'repeat' : 'REPEAT',
+            'times' : 'TIMES',
+            'again' : 'AGAIN',
+            'jog' : 'JOG',
+            'joke' : 'JOG',
+            'joerg' : 'JOG',
+            'circle': 'CIRCLE',
             'then' : 'THEN'
         }
 
@@ -1809,7 +1828,7 @@ class CommandCreator(object):
         #___________________PICK, PLACE, STACK_________________________
         elif command == "PICK":
             position_name = self.get_name(words)
-            return ["PICK", position_name]
+            return ["PICK",  position_name]
         
         ### Added by Peter ###
         elif command == "PLACE":
