@@ -155,6 +155,10 @@ class Manipulator:
         self.recording_task_name = None
         self.saved_positions = tfh.load_position()
         self.saved_tasks = tfh.load_task()
+        self.last_cmd = None
+        self.pick_approach_height = 0.2
+
+
         # Updating waypoint is used to calculate final goal pose of AND command chain.
         self.updating_waypoint = []
         self.velocity = Velocity.MEDIUM
@@ -232,143 +236,6 @@ class Manipulator:
         self.error_recovery()
         print("New approach 2")
         rospy.loginfo("Started")
-
-
-
-
-    def give_tool(self, name):
-        if "CORNER1" not in self.saved_positions.keys() or "CORNER2" not in self.saved_positions.keys():
-            rospy.loginfo("Corners not saved")
-            self.shake_gripper()
-            return
-
-        # If there isn't saved position, dont't do nothing but inform user
-        if name not in self.saved_objects.keys():
-            rospy.loginfo("Object " + name + " not saved.")
-            self.shake_gripper()
-            return
-
-        if not self.saved_objects[name][1]:
-            rospy.loginfo("Object " + name + " not in place.")
-            self.shake_gripper()
-            return
-
-        target = copy.deepcopy(self.saved_objects[name][0])
-        approach_target = copy.deepcopy(target)
-        approach_target.position.z += self.pickup_approach_height
-        # Pick up tool
-        self.open_gripper(wait=False) # Start opening gripper while moving
-        self.move_robot([approach_target])
-        self.open_gripper(wait=True) # Verify gripper is open before moving to target
-        self.move_robot([target])
-        self.close_gripper()
-        # Drop tool
-        target2 = copy.deepcopy(self.saved_positions["CORNER2"])
-        target2.position.x -= self.pickup_area_offset
-        target2.position.y -= self.pickup_area_offset
-        approach_target2 = copy.deepcopy(target2)
-        approach_target2.position.z += self.pickup_approach_height
-        target2.position.z = self.saved_objects[name][0].position.z
-        waypoints = []
-        waypoints.append(approach_target)
-        waypoints.append(approach_target2)
-        waypoints.append(target2)
-        self.move_robot(waypoints)
-        self.open_gripper()
-        # Move up
-        self.move_robot([approach_target2])
-
-        self.change_object_status(name, 0)
-
-    def drop_tool(self, name):
-        if "DROP" not in self.saved_positions.keys():
-            rospy.loginfo("Drop position not saved")
-            self.shake_gripper()
-            return
-
-        # If there isn't saved position, dont't do nothing but inform user
-        if name not in self.saved_objects.keys():
-            rospy.loginfo("Object " + name + " not saved.")
-            self.shake_gripper()
-            return
-
-        if not self.saved_objects[name][1]:
-            rospy.loginfo("Object " + name + " not in place.")
-            self.shake_gripper()
-            return
-
-        target = copy.deepcopy(self.saved_objects[name][0])
-        approach_target = copy.deepcopy(target)
-        approach_target.position.z += self.pickup_approach_height
-        # Pick up tool
-        self.open_gripper(wait=False) # Start opening gripper while moving
-        self.move_robot([approach_target])
-        self.open_gripper(wait=True) # Verify gripper is open before moving to target
-        self.move_robot([target])
-        self.close_gripper()
-        # Drop tool
-        drop_target = copy.deepcopy(self.saved_positions["DROP"])
-        waypoints = []
-        waypoints.append(approach_target)
-        waypoints.append(drop_target)
-        self.move_robot(waypoints)
-        self.open_gripper()
-
-        self.change_object_status(name, 0)
-
-    def drop_all(self):
-        for tool in self.saved_objects.keys():
-            if (self.saved_objects[tool][1]):
-                self.drop_tool(tool)
-
-    def pickup_tool(self, name=""):
-        if "CORNER1" not in self.saved_positions.keys() or "CORNER2" not in self.saved_positions.keys():
-            rospy.loginfo("Corners not saved")
-            self.shake_gripper()
-            return
-
-        if name != "" and self.saved_objects[name][1]:
-            rospy.loginfo("Object " + name + " is already in place.")
-            self.shake_gripper()
-            return
-
-        target = copy.deepcopy(self.saved_positions["CORNER2"])
-        target.position.x -= self.pickup_area_offset
-        target.position.y -= self.pickup_area_offset
-        approach_target = copy.deepcopy(target)
-        approach_target.position.z += self.pickup_approach_height
-
-        if name == "":
-            target.position.z += self.default_pickup_height
-        else:
-            target.position.z = self.saved_objects[name][0].position.z
-
-        # Go to pickup point
-        self.open_gripper(wait=False) # Start opening gripper while moving
-        self.move_robot([approach_target])
-        self.open_gripper(wait=True) # Verify gripper is open before moving to target
-        self.move_robot([target])
-        # Pick tool
-        self.close_gripper()
-        # Move up
-        waypoints = []
-        waypoints.append(approach_target)
-        if name == "":
-            self.move_robot(waypoints)
-            self.waiting_for_tool_name = True
-        else:
-            target2 = copy.deepcopy(self.saved_objects[name][0])
-            approach_target2 = copy.deepcopy(target2)
-            approach_target2.position.z = approach_target.position.z
-            waypoints.append(approach_target2)
-            waypoints.append(target2)
-            self.move_robot(waypoints)
-            self.open_gripper()
-            self.move_robot([approach_target2])
-
-            self.change_object_status(name, 1)
-
-        self.current_tool = None
 
     def handle_received_command(self, command):
         if type(command) == String:
@@ -509,30 +376,7 @@ class Manipulator:
         
         
         #________________GRIPPER COMMANDS_________________________
-        #elif cmd[0] == "GRIPPER" or cmd[0] == "TOL":
-         #   if len(cmd) == 2:
-          #      if cmd[1] == "OPEiiN":
-           #         self.open_gripper()
-            #    elif cmd[1] == "CLOyyyySE":
-             #       self.close_gripper()
-             #   elif cmd[1] == "ROr55TATE" or cmd[1] == "TURN" or cmd[1] == "SPIN":
-             #       self.rotate_gripper(self.step_size)
-             #   elif cmd[1] == "HOM55E":
-             #       self.move_gripper_home()
-     #           else:
-      #              try:
-       #                 distance = float(cmd[1]) / 1000
-        #                self.set_gripper_distance(distance)
-         #           except ValueError:
-          ##              print('Sending Command to ROS: STOP')
-            #            rospy.loginfo('Invalid gripper command "%s" received, available commands are:', cmd[1])
-             #           rospy.loginfo('OPEN, CLOSE, ROTATE or distance between fingers in units mm between 0-80')
-              #          self.shake_gripper()
-          #  if len(cmd) == 3:
-           #     if cmd[1] == "ROTATE" or cmd[1] == "TURN" or cmd[1] == "SPIN":
-            #        if cmd[2] == 'BACK':
-             #           self.rotate_gripper(self.step_size, False)
-                        
+  
         elif cmd[0] == "OPEN_TOOL":
             self.open_gripper()
         elif cmd[0] == "CLOSE_TOOL":
@@ -591,7 +435,7 @@ class Manipulator:
             if cmd[2] in self.saved_positions.keys():
                 if self.mode == 'STEP':
                     stepSize = self.step_size
-                    print("Position1 " + cmd[2] + " saved.")
+                    print("Move to Position " + cmd[2] + " ")
                     self.move_robot_to_position(cmd[2])
 
 
@@ -606,11 +450,11 @@ class Manipulator:
             
         ### Added by Peter ###			
         #_________________PICK AND PLACE related commands_________________________
-        elif cmd[0] == 'PICK':
-            if len(cmd) > 1:
-                if cmd[1] == 'POSITION':
+        elif cmd[0] == 'PICK' and cmd[1] == 'POSITION':
+            stepSize = self.step_size
+            if cmd[2] in self.saved_positions.keys():
                     self.pick_object(cmd[2])
-                self.pick_object(cmd[1])
+                
             else:
                 rospy.loginfo("Not enough arguments, expected PICK [position name]")
 
@@ -1016,6 +860,12 @@ class Manipulator:
         else:
             rospy.loginfo("Position " + position + " not saved.")
 
+
+
+    def move_robot_to_waypoints(self, waypoints):
+        (plan, fraction) = self.move_group.compute_cartesian_path(waypoints, 0.01, 0.0)  # jump_threshold
+        self.move_group.execute(plan, wait=True)
+            
     ### Added by Peter ###
     def hold_object(self, position, distance):
         if position in self.saved_positions.keys():
@@ -1240,7 +1090,7 @@ class Manipulator:
         self.move_action_client.send_goal(movegoal)
         self.move_action_client.wait_for_result()
 
-    def close_gripper(self):
+    def close_gripper(self,wait=False):
         if self.stopped:
             return
         if self.recording_task_name is not None:
@@ -1251,7 +1101,9 @@ class Manipulator:
         graspgoal.force = 2  # limits 0.01 - 50 N
         graspgoal.epsilon = GraspEpsilon(inner=0.08, outer=0.08)
         self.grasp_action_client.send_goal(graspgoal)
-        self.grasp_action_client.wait_for_result()
+        if wait:
+            self.move_action_client.wait_for_result()
+            self.grasp_action_client.wait_for_result()
 
     def servo_move(self, data):
         """Publish command to servo controller"""
@@ -1385,6 +1237,7 @@ class CommandCreator(object):
             'position' : 'POSITION',
             'spot' : 'SPOT',
             'other' : 'OTHER',
+            'take' : 'TAKE',
             'opposite' : 'OPPOSITE', 
             'counter' : 'COUNTER',
             'velocity' : 'VELOCITY',
@@ -1401,8 +1254,8 @@ class CommandCreator(object):
             'offset' : 'OFFSET',
             'push' : 'PUSH',
             'bush' : 'PUSH',
+            'pick' : 'PICK',
             'stack' : 'STACK',
-             'take' : 'TAKE',
             'hold' : 'HOLD',
             'whole' : 'HOLD',
             'repeat' : 'REPEAT',
@@ -1495,99 +1348,7 @@ class CommandCreator(object):
         self.controller_switcher.switch_controller(Controller.MOVEIT, Controller.SERVO)
         self.manipulator.moveit_home(True)
     
-    def pick_only(self):
-        """Execute only a pick sequence"""
-        if self.cmd_param is None:
-            return
-        self.home()
-        # Get ee pose
-        ee_pose = self.manipulator.move_group.get_current_pose()
-        ee_wxyz = [ee_pose.pose.orientation.w,
-                   ee_pose.pose.orientation.x,
-                   ee_pose.pose.orientation.y,
-                   ee_pose.pose.orientation.z]
-        # Execute pick
-        pick_wxyz = get_relative_orientation(ee_wxyz, self.cmd_param['pick_rotation'])
-        pick_xyz = self.cmd_param['pick_xyz']
-        self._pick(pick_xyz, pick_wxyz)
-
-
-    def pick_place(self):
-        """Execute pick/place sequence given the poses"""
-        if self.cmd_param is None:
-            return
-        self.home()
-        # Get ee pose
-        ee_pose = self.manipulator.move_group.get_current_pose()
-        ee_wxyz = [ee_pose.pose.orientation.w,
-                   ee_pose.pose.orientation.x,
-                   ee_pose.pose.orientation.y,
-                   ee_pose.pose.orientation.z]
-        # Execute pick
-        pick_wxyz = get_relative_orientation(ee_wxyz, self.cmd_param['pick_rotation'])
-        pick_xyz = self.cmd_param['pick_xyz']
-        self._pick(pick_xyz, pick_wxyz)
-        # Execute place
-        place_wxyz = get_relative_orientation(ee_wxyz, self.cmd_param['place_rotation'])
-        place_xyz = self.cmd_param['place_xyz']
-        self._place(place_xyz, place_wxyz)
-
-    def _place(self, xyz, wxyz):
-        """Execute place sequence"""
-        # This is used to execute up movement before dropping the target
-        z_offset_up = 0.15
-
-        pose = geometry_msgs.msg.Pose()
-        pose.position.x = xyz[0]
-        pose.position.y = xyz[1]
-        pose.position.z = xyz[2] + z_offset_up
-        pose.orientation.w = wxyz[0]
-        pose.orientation.x = wxyz[1]
-        pose.orientation.y = wxyz[2]
-        pose.orientation.z = wxyz[3]
-
-        # Move above object and open gripper
-        rospy.loginfo("Moving towards place object and opening gripper")
-        self.manipulator.moveit_execute_cartesian_path([pose])
-        self.oc_gripper(True)
-        self.home()
-    
-    def _pick(self, xyz, wxyz):
-        """Execute pick sequence"""
-        # This is used to execute up-down movement when grasping the target
-        z_offset_up = 0.035
-        z_offset_up_2 = 0.20
-        z_offset_down = 0.015
-
-        pose = geometry_msgs.msg.Pose()
-        pose.position.x = xyz[0]
-        pose.position.y = xyz[1]
-        pose.position.z = xyz[2]
-        pose.orientation.w = wxyz[0]
-        pose.orientation.x = wxyz[1]
-        pose.orientation.y = wxyz[2]
-        pose.orientation.z = wxyz[3]
-
-        # Move above object and open gripper
-        rospy.loginfo("Moving towards pick object and opening gripper")
-        pose_up = copy.deepcopy(pose)
-        pose_up.position.z += z_offset_up
-        self.manipulator.moveit_execute_cartesian_path([pose_up])
-        self.oc_gripper(True)
-        # Move down and grasp object
-        rospy.loginfo("Moving down and grasping pick object")
-        pose_down = copy.deepcopy(pose)
-        pose_down.position.z -= z_offset_down
-        self.manipulator.moveit_execute_cartesian_path([pose_down])
-        self.oc_gripper(False)
-        # Move up again
-        rospy.loginfo("Moving up again after picking object")
-        pose_up_2 = copy.deepcopy(pose)
-        pose_up_2.position.z += z_offset_up_2
-        self.manipulator.moveit_execute_cartesian_path([pose_up_2])
-
-
-
+   
     def getCommand(self, first_call):
         allwords = copy.copy(self.original_words)
 
@@ -1827,8 +1588,15 @@ class CommandCreator(object):
  ### Added by Peter ###
         #___________________PICK, PLACE, STACK_________________________
         elif command == "PICK":
-            position_name = self.get_name(words)
-            return ["PICK",  position_name]
+             cmd = self.all_words_lookup_table.get(words.pop(0), '')
+             if cmd in ['POSITION']:
+                position_name = self.get_name(words)
+                if position_name is not None:
+                    return ['PICK', 'POSITION', position_name]
+                else:
+                    print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
+                    return ['PICK', 'NOPOSITION', position_name]
+
         
         ### Added by Peter ###
         elif command == "PLACE":
@@ -1951,17 +1719,6 @@ class CommandCreator(object):
                     return None
                 return ['HOLD', position_name, distance]
 
-
-
-        #___________________TAKE TOOL________________________
-        elif command == "TAKE":
-            tool = self.get_name(words)
-            if tool == "NEWtool":
-                print("Give name for tool with command: 'NAME' [tool name]")
-                return ["TAKE", "NEW"]
-            elif tool != None:
-                return ["TAKE", tool]
-        
         elif command == "RETURN":
             return ["RETURN"]
         
@@ -1999,10 +1756,13 @@ class CommandCreator(object):
             cmd = [command]
             for word in words:
                 cmd.append(word)
+                print("in else")
             return cmd
         else:
             # The first word not in all_words_lookup_table
+            print("not in else")
             return allwords
+        
 
 
     def get_name(self, words):
@@ -2013,6 +1773,7 @@ class CommandCreator(object):
 
         # only name. E.g. TASK
         elif len(words) == 1:
+            print("not a number 1 ")
             # if name is only number
             name_is_number = self.get_number(words)
             if name_is_number is None:

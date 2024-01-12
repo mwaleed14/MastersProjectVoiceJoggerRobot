@@ -152,6 +152,10 @@ class Server:
                                     self.pub.publish(cmdString)
                                 else:
                                     self.pub.publish(cmd.name)
+                    else:
+                        cmd = None
+                        comd = None
+
 
 
                     if cmd is None:
@@ -168,6 +172,7 @@ class Server:
                     elif words != None and ROS_ENABLED:
                         self.pub.publish('INVALID')
                     cmd = None
+                    comd = None
 
                 
         except Exception as e:
