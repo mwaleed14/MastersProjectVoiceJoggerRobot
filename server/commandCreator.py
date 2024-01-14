@@ -453,18 +453,18 @@ class Manipulator:
         elif cmd[0] == 'PICK' and cmd[1] == 'POSITION':
             stepSize = self.step_size
             if cmd[2] in self.saved_positions.keys():
-                    self.pick_object(cmd[2])
-                
+                self.pick_object(cmd[2]) 
             else:
                 rospy.loginfo("Not enough arguments, expected PICK [position name]")
 
-        elif cmd[0] == 'PLACE':
-            if len(cmd) > 1:
-                if cmd[1] == 'POSITION':
-                    self.place_object(cmd[2])
-                self.place_object(cmd[1])
+
+        elif cmd[0] == 'PLACE' and cmd[1] == 'POSITION':
+            stepSize = self.step_size
+            if cmd[2] in self.saved_positions.keys():
+                self.place_object(cmd[2])
             else:
                 rospy.loginfo("Not enough arguments, expected PLACE [position name]")
+        
         
         elif cmd[0] == 'OFFSET':
             if len(cmd) > 3:
@@ -1588,7 +1588,8 @@ class CommandCreator(object):
  ### Added by Peter ###
         #___________________PICK, PLACE, STACK_________________________
         elif command == "PICK":
-             cmd = self.all_words_lookup_table.get(words.pop(0), '')
+             words_target = copy.deepcopy(words)
+             cmd = self.all_words_lookup_table.get(words_target.pop(0), '')
              if cmd in ['POSITION']:
                 position_name = self.get_name(words)
                 if position_name is not None:
@@ -1600,8 +1601,16 @@ class CommandCreator(object):
         
         ### Added by Peter ###
         elif command == "PLACE":
-            position_name = self.get_name(words)
-            return ["PLACE", position_name]
+             words_target = copy.deepcopy(words)
+             cmd = self.all_words_lookup_table.get(words_target.pop(0), '')
+             if cmd in ['POSITION']:
+                position_name = self.get_name(words)
+                if position_name is not None:
+                    return ['PLACE', 'POSITION', position_name]
+                else:
+                    print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
+                    return ['PLACE', 'NOPOSITION', position_name]
+
         
         ### Added by Peter ###
         elif command == "OFFSET":
