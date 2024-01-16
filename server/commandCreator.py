@@ -1183,6 +1183,8 @@ class CommandCreator(object):
             Command.POSITION_NAME: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.TAKE_NEW: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.PICK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+            Command.PLACE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+
 
 
 
@@ -1585,17 +1587,17 @@ class CommandCreator(object):
                     return ['POSITION', 'NAME', position_name]
 
 
- ### Added by Peter ###
+        ### Added by Peter ###
         #___________________PICK, PLACE, STACK_________________________
         elif command == "PICK":
              words_target = copy.deepcopy(words)
              cmd = self.all_words_lookup_table.get(words_target.pop(0), '')
              if cmd in ['POSITION']:
-                position_name = self.get_name(words)
+                position_name = self.get_name(words_target)
                 if position_name is not None:
                     return ['PICK', 'POSITION', position_name]
                 else:
-                    print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
+                    print('Invalid ' + command + ' command. Correct form: PICK POSITION/SPOT [position name]')
                     return ['PICK', 'NOPOSITION', position_name]
 
         
@@ -1604,11 +1606,11 @@ class CommandCreator(object):
              words_target = copy.deepcopy(words)
              cmd = self.all_words_lookup_table.get(words_target.pop(0), '')
              if cmd in ['POSITION']:
-                position_name = self.get_name(words)
+                position_name = self.get_name(words_target)
                 if position_name is not None:
                     return ['PLACE', 'POSITION', position_name]
                 else:
-                    print('Invalid ' + command + ' command. Correct form: SAVE POSITION/SPOT [position name]')
+                    print('Invalid ' + command + ' command. Correct form: PLACE POSITION/SPOT [position name]')
                     return ['PLACE', 'NOPOSITION', position_name]
 
         

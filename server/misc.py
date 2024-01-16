@@ -103,6 +103,8 @@ class Command(Enum):
     POSITION_NAME = 23
     TAKE_NEW = 24 
     PICK_POSITION = 25 
+    PLACE_POSITION = 26
+    
  
     def __str__(self):
         return self.name
