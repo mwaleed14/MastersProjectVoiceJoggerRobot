@@ -158,7 +158,7 @@ class Server:
 
 
 
-                    if cmd is None:
+                    if cmd is None and comd is None:
                         rospy.logwarn(f"Couldn't classify given {sentence = } to any command")
                         continue
                     # Command to robot

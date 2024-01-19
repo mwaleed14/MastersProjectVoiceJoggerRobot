@@ -104,6 +104,7 @@ class Command(Enum):
     TAKE_NEW = 24 
     PICK_POSITION = 25 
     PLACE_POSITION = 26
+    OFFSET_POSITION = 27
     
  
     def __str__(self):

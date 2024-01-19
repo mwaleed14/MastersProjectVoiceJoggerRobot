@@ -468,6 +468,7 @@ class Manipulator:
         
         elif cmd[0] == 'OFFSET':
             if len(cmd) > 3:
+                stepSize = self.step_size
                 if cmd[2] == "LEFT":
                     direction = "left"
                 elif cmd[2] == "RIGHT":
@@ -477,7 +478,8 @@ class Manipulator:
                 elif cmd[2] == "BACKWARD":
                     direction = "backward"
                 height = get_number(cmd[3:]) / 1000
-                self.offset_object(cmd[1], direction, height)
+                if cmd[1] in self.saved_positions.keys():
+                    self.offset_object(cmd[1], direction, height)
             else:
                 rospy.loginfo("Not enough arguments, expected OFFSET [position name] [direction] [distance]")
 
@@ -1184,6 +1186,8 @@ class CommandCreator(object):
             Command.TAKE_NEW: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.PICK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.PLACE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+            Command.OFFSET_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+
 
 
 
@@ -1616,6 +1620,7 @@ class CommandCreator(object):
         
         ### Added by Peter ###
         elif command == "OFFSET":
+            words_target = copy.deepcopy(words)
             if len(words) < 3:
                 return None
             index = 0
@@ -1777,7 +1782,7 @@ class CommandCreator(object):
 
 
     def get_name(self, words):
-        words = self.words_before_chain(words)
+        #words = self.words_before_chain(words)
         # no name
         if len(words) < 1:
             return None
