@@ -1271,6 +1271,7 @@ class CommandCreator(object):
             'joke' : 'JOG',
             'joerg' : 'JOG',
             'circle': 'CIRCLE',
+            'mouse' : 'MOUSE' ,
             'then' : 'THEN'
         }
 
@@ -1789,12 +1790,13 @@ class CommandCreator(object):
 
         # only name. E.g. TASK
         elif len(words) == 1:
-            print("not a number 1 ")
             # if name is only number
             name_is_number = self.get_number(words)
             if name_is_number is None:
+                print("not a number 0 ")
                 return words[0].upper()
             else:
+                print("not a number 1 ")
                 return name_is_number
 
         # number at the end of name. E.g. TASK1
