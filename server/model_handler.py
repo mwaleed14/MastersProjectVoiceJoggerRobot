@@ -41,7 +41,7 @@ class SpeechRecognizer:
         self.rec = vosk.KaldiRecognizer(model, self.rate, json.dumps([
         # System commands
         "start", "stop", "robot", "execution", "move", "go", "set mode", "continuous", "model", "step", "size", "tool", "open", "close", "rotate",
-        "save", "home", "position", "load", "place", "the",
+        "save", "home", "position", "load", "place", "the", "mouse" ,
         # Directions
         "up", "down", "left", "right", "forward", "backward", "front", "back",
         # numbers

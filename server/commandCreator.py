@@ -469,17 +469,17 @@ class Manipulator:
         elif cmd[0] == 'OFFSET':
             if len(cmd) > 3:
                 stepSize = self.step_size
-                if cmd[2] == "LEFT":
+                if cmd[3] == "LEFT":
                     direction = "left"
-                elif cmd[2] == "RIGHT":
+                elif cmd[3] == "RIGHT":
                     direction = "right"
-                elif cmd[2] == "FORWARD":
+                elif cmd[3] == "FORWARD":
                     direction = "forward"
-                elif cmd[2] == "BACKWARD":
+                elif cmd[3] == "BACKWARD":
                     direction = "backward"
-                height = get_number(cmd[3:]) / 1000
-                if cmd[1] in self.saved_positions.keys():
-                    self.offset_object(cmd[1], direction, height)
+                height = get_number(cmd[4:]) / 1000
+                if cmd[2] in self.saved_positions.keys():
+                    self.offset_object(cmd[2], direction, height)
             else:
                 rospy.loginfo("Not enough arguments, expected OFFSET [position name] [direction] [distance]")
 
@@ -1597,8 +1597,9 @@ class CommandCreator(object):
         elif command == "PICK":
              words_target = copy.deepcopy(words)
              cmd = self.all_words_lookup_table.get(words_target.pop(0), '')
-             if cmd in ['POSITION']:
+             if cmd in ['POSITION' , 'SPOT']:
                 position_name = self.get_name(words_target)
+                print(" ", position_name)
                 if position_name is not None:
                     return ['PICK', 'POSITION', position_name]
                 else:
@@ -1628,26 +1629,28 @@ class CommandCreator(object):
             direction_command_found = False
             name_words = []
             distance_words = []
-            for word in words:
-                direction_command = self.all_words_lookup_table.get(word, '')
-                if direction_command not in ['LEFT', 'RIGHT', 'FORWARD', 'BACKWARD']:
-                    index += 1
-                    continue
-                else:
-                    direction_command_found = True
-                    name_words = words[0:index]
-                    distance_words = words[(index+1):]
-                    break
-            if not direction_command_found:
-                print('Invalid ' + command + ' command. Correct form: OFFSET [position] [direction] [distance]')
-                return None
-            else:
-                position_name = self.get_name(name_words)
-                distance = self.get_number(distance_words)
-                if distance == None:
-                    print('Invalid ' + command + ' command. No proper distance value found. Correct form: OFFSET [position] [direction] [distance]')
+            cmd = self.all_words_lookup_table.get(words.pop(0), '')
+            if cmd in ['POSITION' , 'SPOT']:
+                for word in words:
+                    direction_command = self.all_words_lookup_table.get(word, '')
+                    if direction_command not in ['LEFT', 'RIGHT', 'FORWARD', 'BACKWARD']:
+                        index += 1
+                        continue
+                    else:
+                        direction_command_found = True
+                        name_words = words[0:index]
+                        distance_words = words[(index+1):]
+                        break
+                if not direction_command_found:
+                    print('Invalid ' + command + ' command. Correct form: OFFSET [position] [direction] [distance]')
                     return None
-                return ['OFFSET', position_name, direction_command, distance]
+                else:
+                    position_name = self.get_name(name_words)
+                    distance = self.get_number(distance_words)
+                    if distance == None:
+                        print('Invalid ' + command + ' command. No proper distance value found. Correct form: OFFSET [position] [direction] [distance]')
+                        return None
+                    return ['OFFSET', 'POSITION', position_name, direction_command, distance]
 
         ### Added by Peter ###    
         elif command == "PUSH":
@@ -1794,6 +1797,7 @@ class CommandCreator(object):
             name_is_number = self.get_number(words)
             if name_is_number is None:
                 print("not a number 0 ")
+                print("not a number ",words[0].upper())
                 return words[0].upper()
             else:
                 print("not a number 1 ")
@@ -1871,6 +1875,7 @@ class CommandCreator(object):
                 number_words[i] = new_word
         try:
             value = w2n.word_to_num(' '.join(number_words))
+            print("number is ",value)
             return value
         except Exception as a:
             pass

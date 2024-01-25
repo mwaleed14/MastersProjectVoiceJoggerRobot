@@ -120,6 +120,9 @@ class Server:
                 cmd = textclassifier.find_match(sentence, 0.7)
                 self.commandCreator.original_words = words
                 comd = self.commandCreator.getCommand(True)
+                print("get command is ",comd)
+                print("SBERT command is ",cmd)
+
 
                 if comd is not None:
                     #start_robot means start sending commands
