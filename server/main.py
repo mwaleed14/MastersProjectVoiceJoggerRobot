@@ -117,6 +117,7 @@ class Server:
                     continue
                 # Text to command classification
                 sentence = ' '.join(words)
+                print(" sentence is " , sentence)
                 cmd = textclassifier.find_match(sentence, 0.7)
                 self.commandCreator.original_words = words
                 comd = self.commandCreator.getCommand(True)
@@ -154,7 +155,11 @@ class Server:
                                 if len(comd) > 2:
                                     self.pub.publish(cmdString)
                                 else:
-                                    self.pub.publish(cmd.name)
+                                    if cmd is not None:
+                                        self.pub.publish(cmd.name)
+                                    else:
+                                        print(" cmd is ",cmd)
+
                     else:
                         cmd = None
                         comd = None

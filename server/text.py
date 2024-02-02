@@ -16,7 +16,7 @@ class TextClassifier:
         self.command_embeddings = self.model.encode(commands_sentences, convert_to_tensor=False)
 
     def find_match(self, input_sentence: str, threshold: float) -> Optional[Command]:
-
+        print(" sentence is in match " , input_sentence)
         inp_embedding = self.model.encode(input_sentence, convert_to_tensor=False).reshape(1, -1)
 
         sim = (1 - distance.cdist(inp_embedding, self.command_embeddings, 'cosine')).flatten()

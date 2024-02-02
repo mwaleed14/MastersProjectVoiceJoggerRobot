@@ -41,7 +41,7 @@ class SpeechRecognizer:
         self.rec = vosk.KaldiRecognizer(model, self.rate, json.dumps([
         # System commands
         "start", "stop", "robot", "execution", "move", "go", "set mode", "continuous", "model", "step", "size", "tool", "open", "close", "rotate",
-        "save", "home", "position", "load", "place", "the", "mouse" ,
+        "save", "home", "position", "load", "place", "the", "mouse" , "stack",
         # Directions
         "up", "down", "left", "right", "forward", "backward", "front", "back",
         # numbers
@@ -142,7 +142,7 @@ class Recognizer:
         # System commands
         "start", "stop", "panda", "robot", "recover", "move", "go", "mode", "distance", "direction", "step", "low", "medium", "high", "size", "tool", "open", "close", "grasp", "rotate",
         "list", "show", "task", "play", "do", "remove","again", "delete", "save", "home", "finish", "record", "gripper", "position", "spot", "other", "opposite", "counter", "and", "then","corner", "speed", "velocity",
-        "pick", "give", "new", "name", "return","drop","man", "mobile", "mouse", "offset",
+        "pick", "give", "new", "name", "return","drop","man", "mobile", "mouse", "offset", "stack",
         # Directions
         "up", "down", "left", "right", "forward", "backward", "front", "back",
         # colors

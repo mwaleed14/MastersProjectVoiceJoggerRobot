@@ -1187,12 +1187,6 @@ class CommandCreator(object):
             Command.PLACE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.OFFSET_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.STACK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
-
-
-
-
-
-
             
         }
 
@@ -1691,26 +1685,28 @@ class CommandCreator(object):
             distance_command_found = False
             name_words = []
             distance_words = []
-            for word in words:
-                distance_command = self.all_words_lookup_table.get(word, '')
-                if distance_command not in ['DISTANCE']:
-                    index += 1
-                    continue
-                else:
-                    distance_command_found = True
-                    name_words = words[0:index]
-                    distance_words = words[(index+1):]
-                    break
-            if not distance_command_found:
-                print('Invalid ' + command + ' command. Correct form: STACK [position name] DISTANCE [distance]')
-                return None
-            else:
-                position_name = self.get_name(name_words)
-                distance = self.get_number(distance_words)
-                if distance == None:
-                    print('Invalid ' + command + ' command. No proper distance value found. Correct form: STACK [position name] DISTANCE [distance]')
+            cmd = self.all_words_lookup_table.get(words.pop(0), '')
+            if cmd in ['POSITION']:
+                for word in words:
+                    distance_command = self.all_words_lookup_table.get(word, '')
+                    if distance_command not in ['DISTANCE']:
+                        index += 1
+                        continue
+                    else:
+                        distance_command_found = True
+                        name_words = words[0:index]
+                        distance_words = words[(index+1):]
+                        break
+                if not distance_command_found:
+                    print('Invalid ' + command + ' command. Correct form: STACK [position name] DISTANCE [distance]')
                     return None
-                return ['STACK','POSITION' ,position_name, distance]
+                else:
+                    position_name = self.get_name(name_words)
+                    distance = self.get_number(distance_words)
+                    if distance == None:
+                        print('Invalid ' + command + ' command. No proper distance value found. Correct form: STACK [position name] DISTANCE [distance]')
+                        return None
+                    return ['STACK','POSITION' ,position_name, distance]
 
         ### Added by Peter ###    
         elif command == "HOLD":
