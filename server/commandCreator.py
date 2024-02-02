@@ -498,21 +498,20 @@ class Manipulator:
             else:
                 rospy.loginfo("Not enough arguments, expected PUSH [position name] [direction] [distance]")
 
-        elif cmd[0] == 'STACK':
+        elif cmd[0] == 'STACK' and cmd[1] == 'POSITION':
             if len(cmd) > 2:
-                if cmd[1] == 'POSITION':
-                    height = get_number(cmd[3:]) / 1000
-                    self.stack_object(cmd[2], distance=height)
+                height = get_number(cmd[3:]) / 1000
+                self.stack_object(cmd[2], distance=height)
                 height = get_number(cmd[2:]) / 1000
                 self.stack_object(cmd[1], distance=height)
             else:
                 rospy.loginfo("Not enough arguments, expected STACK [position name] DISTANCE [distance]")
 
-        elif cmd[0] == 'HOLD':
+        elif cmd[0] == 'HOLD' and cmd[1] == 'POSITION':
             if len(cmd) > 2:
-                if cmd[1] == 'POSITION':
-                    height = get_number(cmd[3:]) / 1000
-                    self.hold_object(cmd[2], distance=height)
+                
+                height = get_number(cmd[3:]) / 1000
+                self.hold_object(cmd[2], distance=height)
                 height = get_number(cmd[2:]) / 1000
                 self.hold_object(cmd[1], distance=height)
             else:
@@ -1187,6 +1186,8 @@ class CommandCreator(object):
             Command.PICK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.PLACE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.OFFSET_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+            Command.STACK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
+
 
 
 
@@ -1227,6 +1228,7 @@ class CommandCreator(object):
             'tool' : 'TOOL',
             'grasp' : 'GRASP',
             'rotate' : 'ROTATE',
+            'stack' : 'STACK',
             'list' : 'LIST',
             'show' : 'SHOW',
             'task' : 'TASK',
@@ -1708,7 +1710,7 @@ class CommandCreator(object):
                 if distance == None:
                     print('Invalid ' + command + ' command. No proper distance value found. Correct form: STACK [position name] DISTANCE [distance]')
                     return None
-                return ['STACK', position_name, distance]
+                return ['STACK','POSITION' ,position_name, distance]
 
         ### Added by Peter ###    
         elif command == "HOLD":

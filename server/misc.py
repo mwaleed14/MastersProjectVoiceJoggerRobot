@@ -105,6 +105,7 @@ class Command(Enum):
     PICK_POSITION = 25 
     PLACE_POSITION = 26
     OFFSET_POSITION = 27
+    STACK_POSITION = 28
     
  
     def __str__(self):
