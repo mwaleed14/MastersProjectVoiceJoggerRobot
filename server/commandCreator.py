@@ -1186,10 +1186,8 @@ class CommandCreator(object):
             Command.PICK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.PLACE_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
             Command.OFFSET_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
-            Command.STACK_POSITION: lambda: self.manipulator.move_robot_to_position("mn"),
-            
+            Command.STACK_POSITION: lambda: self.manipulator.move_robot_to_position("mn")           
         }
-
 
         self.all_words_lookup_table = {
             'start' : 'START',
